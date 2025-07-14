@@ -1,7 +1,8 @@
 fastapi
 uvicorn
-pymongo
-python-jose
+python-jose[cryptography]
 passlib[bcrypt]
 bcrypt
 cryptography
+firebase-admin
+google-cloud-firestore
