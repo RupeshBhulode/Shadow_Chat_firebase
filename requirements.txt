@@ -6,3 +6,4 @@ bcrypt
 cryptography
 firebase-admin
 google-cloud-firestore
+pydantic[email]
