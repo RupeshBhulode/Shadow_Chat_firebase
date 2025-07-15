@@ -26,3 +26,4 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
     except WebSocketDisconnect:
         manager.disconnect(user_id)
+
