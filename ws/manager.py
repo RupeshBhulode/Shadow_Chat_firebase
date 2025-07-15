@@ -19,3 +19,4 @@ class ConnectionManager:
 
 # Singleton instance
 manager = ConnectionManager()
+
