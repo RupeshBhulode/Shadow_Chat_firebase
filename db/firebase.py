@@ -1,5 +1,6 @@
 import os
 import json
+import tempfile
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -11,10 +12,17 @@ if not firebase_creds:
 # Parse JSON string to dict
 cred_dict = json.loads(firebase_creds)
 
-# Initialize Firebase app with in‑memory credentials
-cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred)
+# ✅ Write the credentials to a temporary file
+with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_json:
+    json.dump(cred_dict, temp_json)
+    temp_json.flush()
+    cred = credentials.Certificate(temp_json.name)
 
-# Firestore client
+# ✅ Initialize Firebase
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+
+# ✅ Firestore client
 firestore_db = firestore.client()
 users_collection = firestore_db.collection("users")
+
