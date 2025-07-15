@@ -315,6 +315,13 @@ def get_chat_partners(user_id: str = Body(...)):
     return {"chat_partners": chat_partners}
 
 
+@message_router.get("/user-count")
+def get_user_count():
+    # 🔍 Fetch all users from Firestore
+    users_stream = users_collection.stream()
+    count = sum(1 for _ in users_stream)
+
+    return {"total_users": count}
 
 
 
