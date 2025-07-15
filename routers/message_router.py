@@ -212,7 +212,7 @@ async def store_encrypted_message(sender_id: str, receiver_id: str, message: str
     encrypted_for_sender = Fernet(sender_key).encrypt(message.encode()).decode()
     encrypted_for_receiver = Fernet(receiver_key).encrypt(message.encode()).decode()
 
-    await messages_collection.add({
+     messages_collection.add({
         "sender_id": sender_id,
         "receiver_id": receiver_id,
         "message_for_sender": encrypted_for_sender,
