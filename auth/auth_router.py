@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from db.firebase import users_collection, auth_client
+from db.firebase import users_collection
 from auth.auth_handler import create_access_token
 from firebase_admin import auth as firebase_auth
 
