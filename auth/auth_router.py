@@ -1,40 +1,48 @@
-#Auth router
-from fastapi import APIRouter, HTTPException
-from models.user import UserRegister, UserLogin
-from db.firebase import users_collection  # 🔁 updated import
-from auth.auth_handler import hash_password, verify_password, create_access_token
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from db.firebase import users_collection, auth_client
+from auth.auth_handler import create_access_token
+from firebase_admin import auth as firebase_auth
 
 auth_router = APIRouter()
 
+# Models
+class UserProfile(BaseModel):
+    username: str
+    email: str
+    avatar: str = None
+    id_token: str  # comes from frontend Firebase Auth
+
 @auth_router.post("/register")
-async def register(user: UserRegister):
-    # 🔍 Check if email already exists
-    existing_user = users_collection.where("email", "==", user.email).stream()
-    if any(existing_user):
-        raise HTTPException(status_code=400, detail="Email already exists")
+async def register(user: UserProfile):
+    # ✅ Verify the Firebase ID token from frontend
+    try:
+        decoded_token = auth_client.verify_id_token(user.id_token)
+        uid = decoded_token["uid"]
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid Firebase token")
 
-    hashed_pw = hash_password(user.password)
-    avatar_url = f"https://api.dicebear.com/8.x/adventurer/svg?seed={user.username}"
+    # ✅ Check if profile already exists in Firestore
+    existing_doc = users_collection.document(uid).get()
+    if existing_doc.exists:
+        raise HTTPException(status_code=400, detail="User already exists")
 
-    new_user_data = {
+    # ✅ Store additional profile data in Firestore
+    avatar_url = user.avatar or f"https://api.dicebear.com/8.x/adventurer/svg?seed={user.username}"
+    users_collection.document(uid).set({
         "username": user.username,
         "email": user.email,
-        "password": hashed_pw,
         "avatar": avatar_url
-    }
+    })
 
-    # 🆕 Add new user to Firestore
-    new_user_ref = users_collection.document()  # Auto-ID
-    new_user_ref.set(new_user_data)
-    user_id = new_user_ref.id
-
-    token = create_access_token({"sub": user_id})
+    # ✅ Create your own access token if you want (optional)
+    token = create_access_token({"sub": uid})
 
     return {
         "access_token": token,
         "token_type": "bearer",
         "user": {
-            "user_id": user_id,
+            "user_id": uid,
             "username": user.username,
             "email": user.email,
             "avatar": avatar_url
@@ -42,29 +50,35 @@ async def register(user: UserRegister):
     }
 
 
+class LoginData(BaseModel):
+    id_token: str  # Firebase Auth token
+
 @auth_router.post("/login")
-async def login(user: UserLogin):
-    # 🔍 Look up user by email
-    query = users_collection.where("email", "==", user.email).limit(1).stream()
-    user_doc = next(query, None)
+async def login(data: LoginData):
+    # ✅ Verify Firebase ID token
+    try:
+        decoded_token = auth_client.verify_id_token(data.id_token)
+        uid = decoded_token["uid"]
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid Firebase token")
 
-    if not user_doc:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    # ✅ Get profile from Firestore
+    user_doc = users_collection.document(uid).get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User profile not found")
 
-    user_data = user_doc.to_dict()
+    profile = user_doc.to_dict()
 
-    if not verify_password(user.password, user_data["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = create_access_token({"sub": user_doc.id})
+    # ✅ Create your own access token if you want
+    token = create_access_token({"sub": uid})
 
     return {
         "access_token": token,
         "token_type": "bearer",
         "user": {
-            "user_id": user_doc.id,
-            "username": user_data.get("username", "N/A"),
-            "email": user_data["email"],
-            "avatar": user_data.get("avatar", "N/A")
+            "user_id": uid,
+            "username": profile.get("username"),
+            "email": profile.get("email"),
+            "avatar": profile.get("avatar")
         }
     }
