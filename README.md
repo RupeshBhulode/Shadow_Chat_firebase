@@ -59,6 +59,22 @@ Explore all routes and test APIs directly from the browser.
 
 
 ---
+### 🔐 **Firebase Authentication**  
+This project uses **Firebase Authentication** to securely manage user signups and logins via backend API.
+
+**📸 Screenshot – Firebase Auth Users:**  
+_Shows the list of users created using the authentication endpoints._
+
+<img width="1463" height="805" alt="Screenshot 2025-07-21 124352" src="https://github.com/user-attachments/assets/fd91a585-a92a-4368-ac9d-a05af3f38c73" />
+
+---
+
+### ☁️ **Firebase Storage**  
+The app uses **Firebase Storage** to save encrypted image files that contain hidden (encoded) messages.
+
+<img width="1483" height="802" alt="Screenshot 2025-07-21 124447" src="https://github.com/user-attachments/assets/48ee07fc-cf50-4268-a6a3-35d94953f4aa" />
+
+--
 
 ## 📦 Deployment
 
